@@ -1,4 +1,0 @@
-abstract
-core
-fixed_point
-floating_point
