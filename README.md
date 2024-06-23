@@ -1,5 +1,6 @@
 
 # FloatingBits
+![Cover](resources/floatingbits.webp)
 
 ## Descripción
 

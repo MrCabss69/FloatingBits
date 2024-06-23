@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 
-
 class NumericFormat(ABC):
     """Abstract base class."""
     @abstractmethod
