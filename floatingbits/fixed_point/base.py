@@ -4,12 +4,12 @@ from floatingbits.abstract import NumericFormat
 
 
 class FixedPointFormat(NumericFormat):
-    def __init__(self, bits_left, bits_right, num_rep):
+    def __init__(self, bits_left, bits_right, number_representation):
         self.bits_left = bits_left
         self.bits_right = bits_right
-        if len(num_rep) != (self.bits_left + self.bits_right):
+        if len(number_representation) != (self.bits_left + self.bits_right):
             raise ValueError("La representación del número debe coincidir con la suma de bits_left y bits_right.")
-        self.bin_rep = num_rep
+        self.bin_rep = number_representation
         self.decimal_value = self.get_value()
         self.hex_rep = bin_to_hex(self.bin_rep)
 
