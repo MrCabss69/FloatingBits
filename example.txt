@@ -1,0 +1,116 @@
+## README.md
+    - content: # FloatingBits
+![Cover](resources/floatingbits.webp)
+
+## Descripción
+
+La biblioteca `FloatingBits` ofrece una implementación robusta para la manipulación y operación de números en formatos de punto fijo y coma flotante. Provee soporte para operaciones básicas en números representados en binario con complemento a uno, complemento a dos, y el estándar IEEE754, permitiendo realizar cálculos precisos y controlados con representaciones de punto fijo y flotante.
+
+## Características
+
+- **Soporte para formatos de coma fija y coma flotante**: Permite la representación y operaciones en números negativos utilizando formatos como el complemento a uno, complemento a dos, y el estándar IEEE754.
+- **Operaciones Binarias en diferentes formatos**: Incluye suma, resta, y conversión de binario a decimal y viceversa.
+- **Representación en decimal, binario, y hexadecimal; conversiones simplificadas**
+
+## Instalación
+
+Este proyecto no está empaquetado para distribución, por lo que se recomienda clonar directamente desde el repositorio de código fuente:
+
+```bash
+git clone https://your-repository-url.git
+```
+
+## Uso
+
+### Creación de Instancias de Números
+
+Para trabajar con números en formatos de punto fijo o flotante, primero debe crear una instancia de la clase correspondiente. Aquí están los pasos básicos:
+
+```python
+from floatingbits.fixed_point import Pure, C1, C2
+
+# Crear un número en formato C1
+number = C1(bits_left=3, bits_right=2, number_representation='01010')
+
+# Obtener el valor decimal del número
+print(number.get_value())
+
+# Sumar dos números
+other_number = C1(bits_left=3, bits_right=2, number_representation='00101')
+result, overflow = number.add_(number, other_number)
+print("Resultado: ", result, "Overflow: ", overflow)
+```
+
+### Pruebas
+
+Para ejecutar las pruebas unitarias:
+
+```bash
+python -m unittest discover -v
+```
+## tests
+    - tests/test_fixed.py/:
+        ### TestC1
+            - setUp: None
+            - test_positive_number_simple: None
+            - test_positive_number_with_fraction: None
+            - test_negative_number_simple: None
+            - test_negative_number_with_fraction: None
+            - test_zero_representation: None
+            - test_invalid_length: None
+            - test_boundary_values: None
+            - test_round_trip_conversion: None
+        ### TestPure
+            - setUp: None
+            - test_addition_simple: None
+            - test_addition_with_overflow: None
+            - test_subtraction_simple: None
+            - test_subtraction_with_underflow: None
+        ### TestC2
+            - setUp: None
+            - test_get_value_positive: None
+            - test_get_value_negative_corrected: None
+            - test_addition: None
+            - test_subtraction: None
+## resources
+## setup.py
+## floatingbits
+    - floatingbits/abstract/:
+    - floatingbits/core/:
+        - floatingbits/core/utils.py/:
+            ### hex_to_bin
+              Docstring: Convierte un string hexadecimal a un string binario.
+            ### bin_to_hex
+              Docstring: Convierte un string binario a un string hexadecimal.
+            ### bin_plus_one
+              Docstring: Incrementa un valor binario en uno, considerando el acarreo.
+    - floatingbits/fixed_point/:
+        - floatingbits/fixed_point/base.py/:
+            ### FixedPointFormat
+                - __init__: None
+                - split_binary: Divide el binario en parte entera y fraccional según los bits especificados.
+                - binary_to_decimal: Convierte las partes entera y fraccional de un binario a su equivalente decimal.
+        - floatingbits/fixed_point/formats.py/:
+            ### Pure
+              Docstring: Implementación específica de C1 que maneja operaciones binarias directamente.
+                - get_value: Calcula y devuelve el valor decimal a partir de la representación binaria.
+                - add_: Realiza una suma binaria entre dos números en el formato, manejando acarreos.
+                - sub_: Realiza una resta binaria entre dos números en el formato, manejando préstamos.
+            ### C1
+              Docstring: Implementación específica de C1
+                - get_value: None
+                - add_: None
+                - sub_: None
+            ### C2
+              Docstring: Implementación específica de C2
+                - get_value: None
+    - floatingbits/floating_point/:
+        - floatingbits/floating_point/base.py/:
+            ### FloatingPointFormat
+                - __init__: None
+            ### IEEE754
+                - __init__: None
+                - split_binary: Divide el binario en parte entera y fraccional según los bits especificados.
+                - binary_to_decimal: Convierte las partes entera y fraccional de un binario a su equivalente decimal.
+                - get_value: None
+        - floatingbits/floating_point/formats.py/:

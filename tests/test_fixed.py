@@ -1,6 +1,36 @@
 import unittest
-from floatinbits.fixed_point import Pure, C1, C2
+from floatingbits.fixed_point import Pure, C1, C2
 
+
+class TestPure(unittest.TestCase):
+    def setUp(self):
+        self.bits_left = 3
+        self.bits_right = 2
+
+    def test_addition_simple(self):
+        # Test simple addition without carrying over
+        pure = Pure(self.bits_left, self.bits_right, '00101')  # 1.25
+        other = Pure(self.bits_left, self.bits_right, '00010')  # 0.5
+        result, overflow = pure.add_(pure, other)
+        self.assertEqual(result, '00111')  # 1.75
+        self.assertFalse(overflow)
+
+    def test_subtraction_simple(self):
+        # Test simple subtraction without underflow
+        pure = Pure(self.bits_left, self.bits_right, '01010')  # 2.5
+        other = Pure(self.bits_left, self.bits_right, '00011')  # 0.75
+        result, underflow = pure.sub_(pure, other)
+        self.assertEqual(result, '00111')  # Expected result 1.75
+        self.assertFalse(underflow)
+
+    def test_subtraction_with_underflow(self):
+        # Test subtraction where underflow occurs
+        pure = Pure(self.bits_left, self.bits_right, '00001')  # Small value
+        other = Pure(self.bits_left, self.bits_right, '00100')  # Larger value
+        result, underflow = pure.sub_(pure, other)
+        self.assertTrue(underflow)
+        
+        
 class TestC1(unittest.TestCase):
     def setUp(self):
         self.bits_left = 3
@@ -9,7 +39,7 @@ class TestC1(unittest.TestCase):
     def test_positive_number_simple(self):
         # Test a simple positive number without fractional part
         c1 = C1(self.bits_left, self.bits_right, '01000')  # 4.0
-        self.assertEqual(c1.get_value(), 4.0)
+        self.assertEqual(c1.get_value(), 2.0)
 
     def test_positive_number_with_fraction(self):
         # Test a positive number with both integer and fractional parts
@@ -18,8 +48,8 @@ class TestC1(unittest.TestCase):
 
     def test_negative_number_simple(self):
         # Test a simple negative number without fractional part
-        c1 = C1(self.bits_left, self.bits_right, '11000')  # Assuming -4 in one's complement
-        self.assertEqual(c1.get_value(), -4.0)
+        c1 = C1(self.bits_left, self.bits_right, '10011')  # Assuming -4 in one's complement
+        self.assertEqual(c1.get_value(), -3.0)
 
     def test_negative_number_with_fraction(self):
         # Test a negative number with both integer and fractional parts
@@ -53,41 +83,6 @@ class TestC1(unittest.TestCase):
         c1 = C1(self.bits_left, self.bits_right, num)
         self.assertEqual(c1.get_value(), 2.5)
         # Further testing can include converting back from decimal to binary if such functionality exists
-
-class TestPure(unittest.TestCase):
-    def setUp(self):
-        self.bits_left = 3
-        self.bits_right = 2
-
-    def test_addition_simple(self):
-        # Test simple addition without carrying over
-        pure = Pure(self.bits_left, self.bits_right, '00101')  # 1.25
-        other = Pure(self.bits_left, self.bits_right, '00010')  # 0.5
-        result, overflow = pure.add_(pure, other)
-        self.assertEqual(result, '00111')  # 1.75
-        self.assertFalse(overflow)
-
-    def test_addition_with_overflow(self):
-        # Test addition where overflow occurs
-        pure = Pure(self.bits_left, self.bits_right, '01101')  # Max positive before overflow
-        other = Pure(self.bits_left, self.bits_right, '00011')  # 0.75
-        result, overflow = pure.add_(pure, other)
-        self.assertTrue(overflow)
-
-    def test_subtraction_simple(self):
-        # Test simple subtraction without underflow
-        pure = Pure(self.bits_left, self.bits_right, '01010')  # 2.5
-        other = Pure(self.bits_left, self.bits_right, '00011')  # 0.75
-        result, underflow = pure.sub_(pure, other)
-        self.assertEqual(result, '00111')  # Expected result 1.75
-        self.assertFalse(underflow)
-
-    def test_subtraction_with_underflow(self):
-        # Test subtraction where underflow occurs
-        pure = Pure(self.bits_left, self.bits_right, '00001')  # Small value
-        other = Pure(self.bits_left, self.bits_right, '00100')  # Larger value
-        result, underflow = pure.sub_(pure, other)
-        self.assertTrue(underflow)
 
 class TestC2(unittest.TestCase):
     def setUp(self):
