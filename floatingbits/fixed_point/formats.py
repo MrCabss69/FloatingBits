@@ -56,7 +56,7 @@ class C1(FixedPointFormat):
     def __init__(self, bits_left, bits_right, number_representation):
         super().__init__(bits_left, bits_right, number_representation)
         self.resolution = 2**-bits_right
-        self.range = [[-2**(bits_left-1), 2**(bits_left-1) - 1]]
+        self.range = [[-2**(bits_left-1)-self.resolution, 2**(bits_left-1) - self.resolution]]
         
         
     def get_value(self):
@@ -82,10 +82,10 @@ class C1(FixedPointFormat):
                 carry = 0
         overflow = carry
         result.reverse()
-        result = ''.join(result)
+        result_str = ''.join(result)
         if overflow > 0:
-            result = bin_plus_one(result)
-        return result, overflow
+            result_str = bin_plus_one(result_str)
+        return C1(self.bits_left, self.bits_right, result_str), overflow
     
     
     def sub_(self, a, b):
@@ -104,13 +104,19 @@ class C1(FixedPointFormat):
                 borrow = 0
         underflow = borrow
         result.reverse() 
-        return ''.join(result), underflow
+        return C1(self.bits_left, self.bits_right, ''.join(result)), underflow
 
         
         
 
 class C2(FixedPointFormat):
-    """Implementación específica de C2"""
+    
+    def __init__(self, bits_left, bits_right, number_representation):
+        super().__init__(bits_left, bits_right, number_representation)
+        self.resolution = 2**-bits_right
+        self.range = [[-2**(bits_left), 2**(bits_left-1) - self.resolution]]
+        
+        
     def get_value(self):
         sign_bit = self.bin_rep[0]
         int_part, float_part = self.split_binary()
@@ -120,7 +126,10 @@ class C2(FixedPointFormat):
             corrected_bin = bin_plus_one(inverted_bin)
             int_part = corrected_bin[:self.bits_left - 1]
             float_part = corrected_bin[self.bits_left - 1:]
-        
         int_value, float_value = self.binary_to_decimal(int_part, float_part)
         return - (int_value + float_value) if sign_bit == '1' else (int_value + float_value)
 
+    def add_(self,a,b):
+        pass
+    def sub_(self,a,b):
+        pass
