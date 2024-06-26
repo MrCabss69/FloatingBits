@@ -4,7 +4,7 @@ from floatingbits.core import bin_to_hex
 class FloatingPointFormat(NumericFormat):
     def __init__(self, exponent_bits, mantisa_bits):
         self.exponent_bits = exponent_bits
-        self.mantisa_bits = mantisa_bits
+        self.mantissa_bits = mantisa_bits
         self.bit_length = exponent_bits + mantisa_bits + 1
         
         

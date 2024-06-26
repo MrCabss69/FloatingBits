@@ -1,116 +1,104 @@
-from floatingbits.core import bin_to_hex
-from floatingbits.floating_point.base import FloatingPointFormat
-
+import math
+from typing import Union
+from floatingbits.floating_point import FloatingPointFormat
 
 
 class Exponent:
-    def __init__(self, binary_representation, excess_1=True):
+    def __init__(self, binary_representation: str, excess_1: bool = True):
         self.binary_rep = binary_representation
         self.excess_1 = excess_1
-        self.excess = 2 ** (len(binary_representation) - 1)
-        if excess_1:
-            self.excess -= 1
+        self.excess = (1 << (len(binary_representation) - 1)) - (1 if excess_1 else 0)
         self.value = int(binary_representation, 2) - self.excess
 
+    def __int__(self):
+        return self.value
+
+    def __repr__(self):
+        return f"Exponent(value={self.value}, binary='{self.binary_rep}')"
+
 class Mantissa:
-    def __init__(self, binary_representation, implied_bit=True):
+    def __init__(self, binary_representation: str, implied_bit: bool = True):
         self.binary_rep = binary_representation
         self.implied_bit = implied_bit
-        self.value = 1.0 if implied_bit else 0.5
-        self.value += sum(int(bit) * (2 ** -(idx + 1)) for idx, bit in enumerate(binary_representation))
-        
+        self.value = (1.0 if implied_bit else 0.0) + int(binary_representation, 2) / (1 << len(binary_representation))
 
-class IEEE754:
-    def __init__(self, binary_representation, exponent_bits, excess=True, implied_bit=True):
-        self.binary_rep = binary_representation
-        self.exponent_bits = exponent_bits
-        self.sign = -1 if binary_representation[0] == '1' else 1
-        self.exponent = Exponent(binary_representation[1:1 + exponent_bits], excess)
-        self.mantissa = Mantissa(binary_representation[1 + exponent_bits:], implied_bit)
+    def __float__(self):
+        return self.value
 
-    def get_value(self):
-        return self.sign * (2 ** self.exponent.value) * self.mantissa.value
-    
-    
-    def from_decimal(self,decimal_value):
-        # dv = s * (2 ** self.exponent.value) * self.mantissa.value
-        
+    def __repr__(self):
+        return f"Mantissa(value={self.value:.6f}, binary='{self.binary_rep}')"
 
-    def add(self, other):
-        # Adjust exponents to match
-        exp_diff = self.exponent.value - other.exponent.value
-        self_mantissa_shifted = self.shift_mantissa(self.mantissa.binary_rep, -exp_diff) if exp_diff < 0 else self.mantissa.binary_rep
-        other_mantissa_shifted = self.shift_mantissa(other.mantissa.binary_rep, exp_diff) if exp_diff > 0 else other.mantissa.binary_rep
+class IEEE754(FloatingPointFormat):
+    def __init__(self, value: Union[str, int, float], exponent_bits: int, mantissa_bits: int, excess_1: bool = True, implicit_bit: bool = True):
+        super().__init__(exponent_bits, mantissa_bits)
+        self.excess_1 = excess_1
+        self.implicit_bit = implicit_bit
+        self._initialize_value(value)
 
-        # Binary addition considering sign
-        if self.sign == other.sign:
-            result_mantissa = self.binary_add(self_mantissa_shifted, other_mantissa_shifted)
+    def _initialize_value(self, value: Union[str, int, float]):
+        if isinstance(value, str):
+            self.from_binary(value)
+        elif isinstance(value, (int, float)):
+            self.from_decimal(value)
         else:
-            result_mantissa = self.binary_subtract(self_mantissa_shifted, other_mantissa_shifted)
-            # Adjust sign if needed
-            if result_mantissa.startswith('-'):
-                result_mantissa = result_mantissa[1:]
-                self.sign *= -1
+            raise ValueError("Input must be a binary string or a decimal number")
 
-        # Normalize and round the result
-        result_mantissa, result_exponent = self.normalize(result_mantissa, self.exponent.value if exp_diff >= 0 else other.exponent.value)
-        result_binary = self.convert_to_binary(self.sign, result_exponent, result_mantissa)
-        return IEEE754(result_binary, self.exponent_bits, self.exponent.excess_1, self.mantissa.implied_bit)
+    def from_binary(self, binary: str):
+        if len(binary) != self.bit_length:
+            raise ValueError(f"Binary string must be {self.bit_length} bits long")
+        self.sign = -1 if binary[0] == '1' else 1
+        self.exponent = Exponent(binary[1:1+self.exponent_bits], self.excess_1)
+        self.mantissa = Mantissa(binary[1+self.exponent_bits:], self.implicit_bit)
+        self.binary = binary
 
-    def shift_mantissa(self, mantissa, places):
-        # Shift mantissa right by 'places' places in binary
-        return '0' * abs(places) + mantissa if places < 0 else mantissa + '0' * places
+    def from_decimal(self, decimal: float):
+        self.sign = -1 if decimal < 0 else 1
+        decimal = abs(decimal)
+        
+        if decimal == 0:
+            exponent_value = 1 - (1 << (self.exponent_bits - 1))
+            mantissa_value = 0
+        else:
+            exponent_value = math.floor(math.log2(decimal))
+            mantissa_value = (decimal / (2 ** exponent_value)) - (1 if self.implicit_bit else 0)
 
-    def binary_add(self, mantissa1, mantissa2):
-        # Binary addition of two mantissas
-        max_len = max(len(mantissa1), len(mantissa2))
-        mantissa1 = mantissa1.zfill(max_len)
-        mantissa2 = mantissa2.zfill(max_len)
-        result = ''
-        carry = 0
-        for i in range(max_len - 1, -1, -1):
-            total = int(mantissa1[i]) + int(mantissa2[i]) + carry
-            result = str(total % 2) + result
-            carry = total // 2
-        if carry:
-            result = '1' + result
-        return result
+        sign_bit = '1' if self.sign == -1 else '0'
+        exponent_bits = format(exponent_value + (1 << (self.exponent_bits - 1)) - (1 if self.excess_1 else 0), f'0{self.exponent_bits}b')
+        mantissa_bits = format(int(mantissa_value * (1 << self.mantissa_bits)), f'0{self.mantissa_bits}b')
+        
+        self.binary = sign_bit + exponent_bits + mantissa_bits
+        self.exponent = Exponent(exponent_bits, self.excess_1)
+        self.mantissa = Mantissa(mantissa_bits, self.implicit_bit)
 
-    def binary_subtract(self, mantissa1, mantissa2):
-        # Perform binary subtraction of two mantissas (mantissa1 - mantissa2)
-        max_len = max(len(mantissa1), len(mantissa2))
-        mantissa1 = mantissa1.zfill(max_len)
-        mantissa2 = mantissa2.zfill(max_len)
-        result = ''
-        borrow = 0
-        for i in range(max_len - 1, -1, -1):
-            diff = int(mantissa1[i]) - int(mantissa2[i]) - borrow
-            if diff < 0:
-                diff += 2
-                borrow = 1
-            else:
-                borrow = 0
-            result = str(diff) + result
-        if borrow:
-            # This means mantissa1 < mantissa2, result will be negative
-            result = '-' + self.binary_subtract(mantissa2, mantissa1)
-        return result.strip('0') or '0'  # Remove leading zeros
+    def get_value(self) -> float:
+        return self.sign * float(self.mantissa) * (2 ** int(self.exponent))
 
-    def normalize(self, mantissa, exponent):
-        # Normalize the binary mantissa
-        # Find the first '1' in mantissa to normalize
-        first_one_index = mantissa.find('1')
-        if first_one_index == -1:
-            return '0', 0  # Mantissa is zero
-        # Shift the mantissa to the right to normalize
-        shift_count = first_one_index
-        mantissa = mantissa[first_one_index:]
-        exponent -= shift_count
-        return mantissa, exponent
+    def add_(self, other: 'IEEE754') -> 'IEEE754':
+        # Implementación básica de suma, puede mejorarse para mayor precisión
+        result = self.get_value() + other.get_value()
+        return IEEE754(result, self.exponent_bits, self.mantissa_bits, self.excess_1, self.implicit_bit)
 
-    def convert_to_binary(self, sign, exponent, mantissa):
-        # Construct the full binary representation from sign, exponent, and mantissa
-        binary_sign = '1' if sign < 0 else '0'
-        binary_exponent = format(exponent + self.exponent.excess, '0{}b'.format(len(self.exponent.binary_rep)))
-        binary_mantissa = mantissa.lstrip('1')[1:]  # Remove the leading '1' for the implicit bit
-        return f"{binary_sign}{binary_exponent}{binary_mantissa}"
+    def sub_(self, other: 'IEEE754') -> 'IEEE754':
+        # Implementación básica de resta, puede mejorarse para mayor precisión
+        result = self.get_value() - other.get_value()
+        return IEEE754(result, self.exponent_bits, self.mantissa_bits, self.excess_1, self.implicit_bit)
+
+    def __repr__(self):
+        return f"IEEE754(value={self.get_value():.6f}, binary='{self.binary}')"
+
+# Ejemplo de uso
+ieee_binary = IEEE754("01000000010010010000111111011011", 8, 23)
+print(ieee_binary)  # Desde representación binaria
+print(f"Exponent: {ieee_binary.exponent}")
+print(f"Mantissa: {ieee_binary.mantissa}")
+
+ieee_decimal = IEEE754(3.14159, 6, 5)
+print(ieee_decimal)  # Desde valor decimal
+print(f"Exponent: {ieee_decimal.exponent}")
+print(f"Mantissa: {ieee_decimal.mantissa}")
+
+result_add = ieee_binary.add_(ieee_decimal)
+print(f"Addition result: {result_add}")
+
+result_sub = ieee_binary.sub_(ieee_decimal)
+print(f"Subtraction result: {result_sub}")

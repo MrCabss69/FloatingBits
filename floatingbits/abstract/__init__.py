@@ -13,4 +13,3 @@ class NumericFormat(ABC):
     @abstractmethod
     def sub_(self,a,b):
         pass
-    
