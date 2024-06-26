@@ -1,5 +1,4 @@
-from floatingbits.abstract import NumericFormat
-from floatingbits.core import bin_to_hex
+from floatingbits.core import NumericFormat, bin_to_hex
 
 class FloatingPointFormat(NumericFormat):
     def __init__(self, exponent_bits, mantisa_bits):
