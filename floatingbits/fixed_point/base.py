@@ -1,7 +1,5 @@
 from floatingbits.core import bin_to_hex, NumericFormat
 
-
-
 class FixedPointFormat(NumericFormat):
     def __init__(self, bits_left, bits_right, number_representation):
         self.bits_left = bits_left

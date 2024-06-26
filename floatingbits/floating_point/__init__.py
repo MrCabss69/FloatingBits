@@ -1,2 +1,1 @@
-from floatingbits.floating_point.base import FloatingPointFormat
-from floatingbits.floating_point.formats import IEEE754
+from .formats import IEEE754

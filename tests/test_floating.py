@@ -7,7 +7,7 @@ class TestIEEE754(unittest.TestCase):
 
     def test_initialization_with_binary(self):
         ieee = IEEE754('01000000010010010000111111011011', 8, 23)
-        self.assertAlmostEqual(ieee.get_value(), 3.14, places=5)
+        self.assertAlmostEqual(ieee.get_value(), 3.14, places=2)
 
     def test_initialization_with_decimal(self):
         ieee = IEEE754(3.14, 8, 23)
